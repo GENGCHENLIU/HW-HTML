@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# launch script for HW-HTML
+# script version 1.0
+
+# install dir
+INST="$(dirname "$0")"
+
+# resolve arguments to absolute paths
+i=1
+for ARG in "$@"
+do
+	if [[ ! $ARG == -* ]]
+	then
+		ARGS[i-1]="$(realpath "${!i}")"
+	else
+		ARGS[i-1]="${!i}"
+	fi
+	
+	i=$(($i+1))
+done
+
+# cd to install dir to find default.css
+cd $INST
+
+java -jar "$INST/HW-HTML.jar" "${ARGS[@]}"
