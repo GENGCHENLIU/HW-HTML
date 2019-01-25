@@ -3,22 +3,34 @@
 	margin-right: auto;
 }
 
-body, p {
-	max-width: 700px;
-	margin-left: auto;
-	margin-right: auto;
-}
-
 .strictCenter {
-	max-width: 700px;
+	display: block;
+	max-width: 100%;
 	margin-left: auto;
 	margin-right: auto;
 	text-align: center;
 }
 
 @media print {
-	div { page-break-inside: avoid; }
+	/* Avoid page break in middle of problems */
+	.contentDiv { break-inside: avoid; }
+	/* Breaking in the first one is fine (otherwise blank first page) */
+	#content0 { break-inside: auto; }
 }
 
-p { line-height: 1.5; }
+body, p {
+	font-family: 'Times New Roman', times, 'STIX', serif;
+	max-width: 700px;
+	margin-left: auto;
+	margin-right: auto;
+}
 
+p {
+	line-height: 1.5;
+	margin: 0 auto 28;
+}
+
+h4 { margin: 14px auto; }
+div { margin-bottom: 32px; }
+
+img { max-width: 100%; }
