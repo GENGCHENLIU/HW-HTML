@@ -2,30 +2,95 @@ import hw.*;
 import html.*;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.Properties;
 import java.util.stream.Stream;
 
 /**
- * @version 2.7
+ * @version 2.8
  */
 public class HWtoHTML {
-	private static final String VERSION = "2.7";
+	private static final String VERSION = "2.8";
 
 
-	private static final String DEFAULT_CSS_FILE = "default.css";
+	private static class PropertiesUtils {
+		/**
+		 * Loads the properties file from the specified stream.
+		 * @param inStream  input stream of the properties file
+		 * @param defaults  default values, may be null
+		 * @return a new Properties loaded with the content of the specified stream, null if
+		 * failed to read
+		 */
+		private static Properties loadProperties(
+				final InputStream inStream,
+				final Properties defaults) {
+			try {
+				final Properties properties = new Properties(defaults);
+				properties.load(inStream);
+				return properties;
+			}
+			catch (IOException e) {
+				System.err.println("Failed to load properties");
+				e.printStackTrace();
+				return null;
+			}
+		}
 
-	// The default CSS
-	private static final String DEFAULT_CSS = readFile(DEFAULT_CSS_FILE);
+		private static Properties loadProperties(
+				final String path,
+				final Properties defaults) {
+			try (final InputStream propertiesFileStream =
+					     Files.newInputStream(Paths.get(path))) {
+				return loadProperties(propertiesFileStream, defaults);
+			}
+			catch (IOException e) {
+				System.err.printf("Failed to read '%s'%n", path);
+				e.printStackTrace();
+				return null;
+			}
+		}
+
+		/**
+		 * Gets from the specified Properties. Note 'null safe' refers to properties being
+		 * nullable, the return value may still be null.
+		 */
+		private static String nullSafeGet(final Properties properties, final String key) {
+			return (properties == null) ? null : properties.getProperty(key);
+		}
+	}
+
+
+
+	// hardcoded in the JAR, used as backup
+	private static final Properties DEFAULTS;
+	static {
+		final String DEFAULT_CONFIG = "default.properties";
+		final InputStream configStream = HWtoHTML.class.getResourceAsStream(DEFAULT_CONFIG);
+		DEFAULTS = PropertiesUtils.loadProperties(configStream, null);
+	}
+
+	// placed in same directory alongside JAR, user configurable
+	private static final String CONFIG_FILE = "config.properties";
+	private static final Properties CONFIG =
+			PropertiesUtils.loadProperties(CONFIG_FILE, DEFAULTS);
+
+
+	private static String BASE_CSS =
+			readFile(PropertiesUtils.nullSafeGet(CONFIG, "base-css"));
 
 	/**
 	 * Reads all lines from the specified file, returns the content of the file as a
 	 * single string, preserving line breaks as newlines.
 	 * @param path  the path to the file to be read
-	 * @return  a string containing all lines of the specified file
+	 * @return  a string containing all lines of the specified file, null if file failed
+	 * to read
 	 */
 	private static String readFile(final String path) {
+		if (path == null) return null;
+
 		try (final Stream<String> lines = Files.lines(Paths.get(path))) {
 			return
 					lines.collect(
@@ -33,71 +98,48 @@ public class HWtoHTML {
 							// preserve line breaks
 							(stringBuilder, line) -> stringBuilder.append(line).append('\n'),
 							StringBuilder::append)
-					.toString();
+							.toString();
 		}
 		catch (IOException e) {
 			System.err.printf("Failed to read '%s'%n", path);
-			return BACKUP_CSS;
+			e.printStackTrace();
+			return null;
 		}
 	}
 
 
-	// a backup if default css file failed to read
-	private static final String BACKUP_CSS = ".center {\n" +
-											  "\tmargin-left: auto;\n" +
-											  "\tmargin-right: auto;\n" +
-											  "}\n" +
-											  "\n" +
-											  "body, p {\n" +
-											  "\tmax-width: 700px;\n" +
-											  "\tmargin-left: auto;\n" +
-											  "\tmargin-right: auto;\n" +
-											  "}\n" +
-											  "\n" +
-											  ".strictCenter {\n" +
-											  "\tmax-width: 700px;\n" +
-											  "\tmargin-left: auto;\n" +
-											  "\tmargin-right: auto;\n" +
-											  "\ttext-align: center;\n" +
-											  "}\n" +
-											  "\n" +
-											  "@media print {\n" +
-											  "\tdiv { page-break-inside: avoid; }\n" +
-											  "}\n" +
-											  "\n" +
-											  "p { line-height: 1.5; }\n\n";
-
-
 	public static void main(String... args) {
 
-
-		if (args.length > 0 && args[0].equals("--print-default")) {
-			System.out.print(DEFAULT_CSS);
-			return;
+		if (args.length > 0) {
+			if (args[0].equals("--print-css")) {
+				System.out.println(BASE_CSS);
+				return;
+			}
+			else if (args[0].equals("--print-config")) {
+				if (CONFIG != null) CONFIG.list(System.out);
+				return;
+			}
 		}
-		else if (args.length > 0 && args[0].equals("--print-backup")) {
-			System.out.print(BACKUP_CSS);
-			return;
-		}
-		else if (args.length < 2 || (args[0].equals("--clean") && args.length < 3)) {
+		if (args.length < 2 || (args[0].equals("--clean") && args.length < 3)) {
 			System.out.println("Version: " + VERSION);
 			System.out.println("Usage:");
 			System.out.println("HWtoHTML <input> <output> [css]");
 			System.out.println("HWtoHTML --clean <input> <output> [css]");
-			System.out.println("HWtoHTML --print-default");
-			System.out.println("HWtoHTML --print-backup");
-
+			System.out.println("HWtoHTML --print-config");
+			System.out.println("HWtoHTML --print-css");
 			return;
 		}
 
 
+		// css
 		final boolean noDefaultCSS = args[0].equals("--clean");
-		final String baseCSS = noDefaultCSS ? "" : DEFAULT_CSS;
+		final String baseCSS = noDefaultCSS ? null : BASE_CSS;
 
-		/*
-		target file
-		output file
-		 */
+		// engine, used to format math stuff
+		final String engine = PropertiesUtils.nullSafeGet(CONFIG, "engine");
+
+
+		// setup variables from args array
 		final String input, output, cssFile;
 		if (noDefaultCSS) {
 			input = args[1];
@@ -134,15 +176,16 @@ public class HWtoHTML {
 		// translate to HTML
 		// read css, prepare html file
 		HtmlDocument htmlDoc;
-		if (cssFile == null)
-			htmlDoc = newHTMLDocForHW(baseCSS);
-		else {
+		if (cssFile == null)    // no custom CSS
+			htmlDoc = newHTMLDocForHW(baseCSS, engine);
+		else {  // custom CSS
 			try {
-				htmlDoc = newHTMLDocForHW(baseCSS + String.join("\n", Files.readAllLines(Paths.get(cssFile))));
+				final String appendedCSS = baseCSS + '\n' + String.join("\n", Files.readAllLines(Paths.get(cssFile)));
+				htmlDoc = newHTMLDocForHW(appendedCSS, engine);
 			}
 			catch (IOException e) {
-				System.err.printf("Failed to read css file '%s'%n", cssFile);
-				htmlDoc = newHTMLDocForHW(baseCSS);
+				System.err.printf("Failed to read file '%s'%n", cssFile);
+				htmlDoc = newHTMLDocForHW(baseCSS, engine);
 			}
 		}
 
@@ -211,29 +254,43 @@ public class HWtoHTML {
 
 
 	/**
-	 * Creates a new HtmlDocument specifically for HWDocuments.
+	 * Creates a new HtmlDocument specifically for HWDocuments. The returned HtmlDocument
+	 * contains a head element with the specified css in a style element. The engine is
+	 * used as the value to the src attribute of a script element in the head element.
+	 * @param css   the css source code to be included in the resulting html document
+	 * @param enginePath    the location of the engine
 	 */
-	private static HtmlDocument newHTMLDocForHW(final String css) {
+	private static HtmlDocument newHTMLDocForHW(final String css, final String enginePath) {
 		final HtmlDocument doc = new HtmlDocument();
 
-		final Element head = new Element("head");
-
-		// add script
-		final String scriptSrc =
-				"https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/latest.js?config=AM_CHTML";
-		head.appendContent(
-				new Element("script", new Attribute("src", scriptSrc)));
+		Element head = null;    // lazy init
 
 
-		// if there is some CSS, put it in <head>
+		// setup engine
+		if (enginePath != null && !enginePath.isEmpty()) {
+			final Element engine =
+					new Element("script", new Attribute("src", enginePath));
+
+			// lazy init
+			if (head == null)
+				head = new Element("head");
+			head.appendContent(engine);
+		}
+
+		// setup CSS
 		if (css != null && !css.isEmpty()) {
 			final Element style = new Element("style");
 			style.appendContent(css);
+
+			// lazy init
+			if (head == null)
+				head = new Element("head");
 			head.appendContent(style);
 		}
 
 
-		doc.appendContent(head);
+		if (head != null)
+			doc.appendContent(head);
 
 		return doc;
 	}
