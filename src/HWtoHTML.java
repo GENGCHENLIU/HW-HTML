@@ -10,10 +10,10 @@ import java.util.Properties;
 import java.util.stream.Stream;
 
 /**
- * @version 2.8
+ * @version 2.9
  */
 public class HWtoHTML {
-	private static final String VERSION = "2.8";
+	private static final String VERSION = "2.9";
 
 
 	private static class PropertiesUtils {
@@ -80,6 +80,8 @@ public class HWtoHTML {
 
 	private static String BASE_CSS =
 			readFile(PropertiesUtils.nullSafeGet(CONFIG, "base-css"));
+	private static String SCRIPT =
+			readFile(PropertiesUtils.nullSafeGet(CONFIG, "script"));
 
 	/**
 	 * Reads all lines from the specified file, returns the content of the file as a
@@ -177,15 +179,15 @@ public class HWtoHTML {
 		// read css, prepare html file
 		HtmlDocument htmlDoc;
 		if (cssFile == null)    // no custom CSS
-			htmlDoc = newHTMLDocForHW(baseCSS, engine);
+			htmlDoc = newHTMLDocForHW(baseCSS, engine, SCRIPT);
 		else {  // custom CSS
 			try {
 				final String appendedCSS = baseCSS + '\n' + String.join("\n", Files.readAllLines(Paths.get(cssFile)));
-				htmlDoc = newHTMLDocForHW(appendedCSS, engine);
+				htmlDoc = newHTMLDocForHW(appendedCSS, engine, SCRIPT);
 			}
 			catch (IOException e) {
 				System.err.printf("Failed to read file '%s'%n", cssFile);
-				htmlDoc = newHTMLDocForHW(baseCSS, engine);
+				htmlDoc = newHTMLDocForHW(baseCSS, engine, SCRIPT);
 			}
 		}
 
@@ -259,8 +261,12 @@ public class HWtoHTML {
 	 * used as the value to the src attribute of a script element in the head element.
 	 * @param css   the css source code to be included in the resulting html document
 	 * @param enginePath    the location of the engine
+	 * @param script  configuration for the engine
 	 */
-	private static HtmlDocument newHTMLDocForHW(final String css, final String enginePath) {
+	private static HtmlDocument newHTMLDocForHW(
+			final String css,
+			final String enginePath,
+			final String script) {
 		final HtmlDocument doc = new HtmlDocument();
 
 		Element head = null;    // lazy init
@@ -275,6 +281,17 @@ public class HWtoHTML {
 			if (head == null)
 				head = new Element("head");
 			head.appendContent(engine);
+		}
+
+		// config engine or additional script
+		if (script != null && !script.isEmpty()) {
+			final Element config = new Element("script");
+			config.appendContent(script);
+
+			// lazy init
+			if (head == null)
+				head = new Element("head");
+			head.appendContent(config);
 		}
 
 		// setup CSS
