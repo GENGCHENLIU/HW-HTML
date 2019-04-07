@@ -30,9 +30,8 @@ public class Element implements Container, Content {
 
 	public String getName() { return name; }
 
-	public List<Attribute> getAttributes() {
-		return Collections.unmodifiableList(attributes);
-	}
+	public void addAttribute(Attribute attribute) { attributes.add(attribute); }
+	public List<Attribute> getAttributes() { return attributes; }
 
 	@Override
 	public void appendContent(Content content) { contents.add(content); }

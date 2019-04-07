@@ -3,21 +3,17 @@ package hw;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * A document containing the title, author, contents and solutions of a homework assignment.
- * @version 1.2
+ * A document containing the title, author, and structured into sections of subtitles and
+ * paragraphs.
  */
 public final class HWDocument {
 	private final String title, author;
-	private final List<Content> contents = new ArrayList<>();
+	private final List<Section> sections = new ArrayList<>();
 
 	/**
 	 * Creates a new HWDocument with the specified arguments.
@@ -25,16 +21,16 @@ public final class HWDocument {
 	public HWDocument(
 			String title,
 			String author,
-			Collection<? extends Content> contents) {
+			Collection<? extends Section> sections) {
 		this.title = title;
 		this.author = author;
-		this.contents.addAll(contents);
+		this.sections.addAll(sections);
 	}
 
 	public String getTitle() { return title; }
 	public String getAuthor() { return author; }
 
-	public List<Content> getContents() { return Collections.unmodifiableList(contents); }
+	public List<Section> getSections() { return Collections.unmodifiableList(sections); }
 
 
 	/**
@@ -45,15 +41,16 @@ public final class HWDocument {
 		final Builder doc = new Builder();
 
 
-		final List<String> lines = Files.lines(file).collect(Collectors.toList());
+		final List<String> lines =
+				Files.lines(file).collect(Collectors.toList());
 
-		int lineNum = 0;
+		final Iterator<String> linesIt = lines.iterator();
 
 		// look for title and author
 		boolean hasTitle = false, hasAuthor = false;
 
-		for (; lineNum < lines.size(); lineNum++) {
-			final String line = lines.get(lineNum);
+		while (linesIt.hasNext()) {
+			final String line = linesIt.next();
 
 			if (line.isEmpty()) break;	// empty line, stop
 
@@ -75,8 +72,8 @@ public final class HWDocument {
 
 		boolean isLastLineEmpty = false;
 
-		for (lineNum++; lineNum < lines.size(); lineNum++) {
-			final String line = lines.get(lineNum);
+		while (linesIt.hasNext()) {
+			final String line = linesIt.next();
 
 			// 2 empty lines, new section
 			if (isLastLineEmpty && line.isEmpty()) {
@@ -90,43 +87,11 @@ public final class HWDocument {
 			isLastLineEmpty = line.isEmpty();
 		}
 
+
 		// handle each section
-		for (List<String> section : sections) {
-			if (section.isEmpty()) continue;
-
-			doc.addContent(new SubTitle(section.get(0)));
-
-			boolean afterPreText = false;
-
-			Paragraph paragraph = new Paragraph();
-			doc.addContent(paragraph);
-			for (int i = 1; i < section.size(); i++) {
-				final String line = section.get(i);
-
-				// if last line was pre text
-				if (line.startsWith("//")) {
-					if (afterPreText)
-						doc.getContents().remove(paragraph);
-
-					doc.addContent(new PreText(line.substring(2)));
-
-					paragraph = new Paragraph();
-					doc.addContent(paragraph);
-				}
-				else if (line.isEmpty() && !afterPreText) {
-					paragraph = new Paragraph();
-					doc.addContent(paragraph);
-				}
-				else
-					paragraph.addLine(line);
-
-				afterPreText = line.startsWith("//");
-			}
-
-			if (paragraph.getLines().isEmpty())	// empty paragraph, remove it
-				doc.getContents().remove(paragraph);
-		}
-
+		sections.stream()
+				.map(Section::parse)
+				.forEachOrdered(doc::addSection);
 
 		return doc.build();
 	}
@@ -151,7 +116,7 @@ public final class HWDocument {
 
 	public static final class Builder {
 		private String title, author;
-		private List<Content> contents = new ArrayList<>();
+		private List<Section> sections = new ArrayList<>();
 
 		public String getTitle() { return title; }
 		public void setTitle(String title) { this.title = title; }
@@ -159,9 +124,9 @@ public final class HWDocument {
 		public String getAuthor() { return author; }
 		public void setAuthor(String author) { this.author = author; }
 
-		public List<Content> getContents() { return contents; }
-		public void addContent(Content content) { contents.add(content); }
+		public List<Section> getSections() { return sections; }
+		public void addSection(Section section) { sections.add(section); }
 
-		public HWDocument build() { return new HWDocument(title, author, contents); }
+		public HWDocument build() { return new HWDocument(title, author, sections); }
 	}
 }

@@ -1,34 +1,18 @@
 package hw;
 
-import html.BR;
+import html.Attribute;
 import html.Element;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 /**
- * @version 1.0
+ * A Paragraph is a logical grouping
  */
-public class Paragraph implements Content {
-	private final List<String> lines = new ArrayList<>();
-
-	public void addLine(String line) { lines.add(line); }
-	public List<String> getLines() { return lines; }
-
+public final class Paragraph extends Group {
 	@Override
-	public html.Content toHtmlElement() {
-		final Element element = new Element("p");
+	public Element toHtmlContent() {
+		final Element element =
+				new Element("div", new Attribute("class", "paragraph"));
 
-		for (Iterator<String> it = lines.iterator(); it.hasNext();) {
-			final String line = it.next();
-
-			element.appendContent(line);
-			if (it.hasNext()) {
-				element.appendContent(new BR());
-				element.appendContent("\n");
-			}
-		}
+		contents.forEach(content -> element.appendContent(content.toHtmlContent()));
 
 		return element;
 	}

@@ -3,18 +3,15 @@ package hw;
 import html.Content;
 import html.Element;
 
-/**
- * @version 1.0
- */
-public final class SubTitle extends AbstractContent {
+public final class SubTitle extends TextContent {
 	public SubTitle(String title) {
 		super(title);
 	}
 
 	@Override
-	public Content toHtmlElement() {
+	public Content toHtmlContent() {
 		final Element element = new Element("h4");
-		element.appendContent(getContent());
+		element.appendContent(toString());
 		return element;
 	}
 }

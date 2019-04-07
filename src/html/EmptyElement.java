@@ -1,6 +1,7 @@
 package html;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -19,7 +20,7 @@ public class EmptyElement extends Element {
 	@Override
 	public void appendContents(Collection<? extends Content> contents) { throw new UnsupportedOperationException(); }
 	@Override
-	public List<Content> getContents() { throw new UnsupportedOperationException(); }
+	public List<Content> getContents() { return Collections.emptyList(); }
 
 	@Override
 	public String toString() {

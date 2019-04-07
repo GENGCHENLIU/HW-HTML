@@ -10,10 +10,10 @@ import java.util.Properties;
 import java.util.stream.Stream;
 
 /**
- * @version 2.9
+ * @version 3.0
  */
 public class HWtoHTML {
-	private static final String VERSION = "2.9";
+	private static final String VERSION = "3.0";
 
 
 	private static class PropertiesUtils {
@@ -220,24 +220,14 @@ public class HWtoHTML {
 
 		{
 			// contents, typically questions and solutions
-			int i = 0;  // index the <div>s to make them easier to refer to in CSS
+			int i = 0;  // index sections to make them easier to refer to in CSS
 
-			Element div = new Element("div",
-					new Attribute("class", "contentDiv"),
-					new Attribute("id", "content"+ (i++)));
+			for (hw.Section section : hwDoc.getSections()) {
+				final Element sectionElement = section.toHtmlContent();
+				sectionElement.addAttribute(new Attribute("class", "section"));
+				sectionElement.addAttribute(new Attribute("id", "section" + (i++)));
 
-			body.appendContent(div);
-			for (hw.Content content : hwDoc.getContents()) {
-				// if the content is a SubTitle (i.e. <h4>) and the current one has stuff in it
-				if (content instanceof SubTitle && !div.getContents().isEmpty()) {
-					// creates a new <div> and puts subsequent contents in that <div>
-					div = new Element("div",
-							new Attribute("class", "contentDiv"),
-							new Attribute("id", "content"+ (i++)));
-					body.appendContent(div);
-				}
-
-				div.appendContent(content.toHtmlElement());
+				body.appendContent(sectionElement);
 			}
 		}
 
@@ -269,29 +259,29 @@ public class HWtoHTML {
 			final String script) {
 		final HtmlDocument doc = new HtmlDocument();
 
-		Element head = null;    // lazy init
+		Element head = new Element("head");
+		Element charEncoding =
+				new EmptyElement(
+						"meta",
+						new Attribute("charset", "utf-8"));
+		head.appendContent(charEncoding);
 
+
+		// config engine or additional script
+		if (script != null && !script.isEmpty()) {
+			final Element config =
+					new Element("script", new Attribute("type", "text/x-mathjax-config"));
+			config.appendContent(script);
+
+			head.appendContent(config);
+		}
 
 		// setup engine
 		if (enginePath != null && !enginePath.isEmpty()) {
 			final Element engine =
 					new Element("script", new Attribute("src", enginePath));
 
-			// lazy init
-			if (head == null)
-				head = new Element("head");
 			head.appendContent(engine);
-		}
-
-		// config engine or additional script
-		if (script != null && !script.isEmpty()) {
-			final Element config = new Element("script");
-			config.appendContent(script);
-
-			// lazy init
-			if (head == null)
-				head = new Element("head");
-			head.appendContent(config);
 		}
 
 		// setup CSS
@@ -299,15 +289,10 @@ public class HWtoHTML {
 			final Element style = new Element("style");
 			style.appendContent(css);
 
-			// lazy init
-			if (head == null)
-				head = new Element("head");
 			head.appendContent(style);
 		}
 
-
-		if (head != null)
-			doc.appendContent(head);
+		doc.appendContent(head);
 
 		return doc;
 	}

@@ -4,12 +4,12 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * A Container contains Content.
+ * A Container contains HTMLConvertible.
  * @version 1.0
  */
 public interface Container {
 	/**
-	 * Appends the specified Content to this Container.
+	 * Appends the specified HTMLConvertible to this Container.
 	 */
 	void appendContent(Content content);
 
