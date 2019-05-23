@@ -1,6 +1,5 @@
 package hw;
 
-import html.Content;
 import html.Text;
 
 /**
@@ -13,7 +12,7 @@ public class PreText extends TextContent {
 	}
 
 	@Override
-	public Content toHtmlContent() {
+	public html.Content toHtmlContent() {
 		return new Text(toString());
 	}
 }

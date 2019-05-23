@@ -23,8 +23,7 @@ public class Element implements Container, Content {
 	 */
 	public Element(String name, Attribute... attributes) {
 		this.name = name;
-		// would use List.of, but not used for java 8 compatibility
-		this.attributes.addAll(Arrays.asList(attributes));
+		this.attributes.addAll(List.of(attributes));
 	}
 
 

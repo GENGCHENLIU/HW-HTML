@@ -4,20 +4,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Represents content in a document composed of text. This can be thought as the leaves in
+ * a HW document tree.
+ *
  * @version 1.0
  */
-public abstract class TextContent implements HTMLConvertible {
-	protected final List<String> lines = new ArrayList<>();
+public abstract class TextContent implements Content<String> {
 
-	protected TextContent(String content) {
-		lines.add(content);
-	}
+	protected List<String> lines = new ArrayList<>();
 
-	public void append(String more) {
-		lines.add(more);
-	}
+	protected TextContent(String content) { append(content); }
+
+	@Override
+	public void append(final String content) { lines.add(content); }
 
 	public List<String> getLines() { return lines; }
+
+	@Override
+	public boolean isEmpty() { return lines.isEmpty(); }
 
 	/**
 	 * @return  the lines in this TextContent separated with newline characters

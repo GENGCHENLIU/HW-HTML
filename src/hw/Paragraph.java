@@ -4,7 +4,8 @@ import html.Attribute;
 import html.Element;
 
 /**
- * A Paragraph is a logical grouping
+ * A Paragraph is similar to Group, except that the HTML representation is marked with
+ * a special class called "paragraph".
  */
 public final class Paragraph extends Group {
 	@Override

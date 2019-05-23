@@ -23,7 +23,7 @@ public final class Section extends Group {
 		create new paragraph if blank line is encountered.
 		 */
 		Paragraph paragraph = null;
-		TextContent content = null;
+		Content<?> content = null;
 
 		// for each remaining line
 		while (linesIt.hasNext()) {
@@ -34,7 +34,7 @@ public final class Section extends Group {
 				paragraph = new Paragraph();
 			// empty line, new paragraph
 			else if (line.isEmpty()) {
-				if (content != null && !content.getLines().isEmpty()) {
+				if (content != null && !content.isEmpty()) {
 					paragraph.append(content);
 					content = null;
 				}
@@ -52,13 +52,27 @@ public final class Section extends Group {
 					content = new PreText(line.substring(2));
 				else {
 					// if type of content is or is subtype of PreText
-					if (PreText.class.isAssignableFrom(content.getClass()))
+					if (content instanceof PreText)
 						// append to that
-						content.append(line.substring(2));
+						((PreText) content).append(line.substring(2));
 					else {
 						// put content in paragraph and prepare new content
 						paragraph.append(content);
 						content = new PreText(line.substring(2));
+					}
+				}
+			}
+
+			// table
+			else if (line.startsWith("|")) {
+				if (content == null) // handle null
+					content = new Table(line);
+				else {
+					if (content instanceof Table)
+						((Table) content).append(line);
+					else {
+						paragraph.append(content);
+						content = new Table(line);
 					}
 				}
 			}
@@ -69,9 +83,9 @@ public final class Section extends Group {
 					content = new Text(line);
 				else {
 					// if type of content is or is subtype of Text
-					if (Text.class.isAssignableFrom(content.getClass()))
+					if (content instanceof Text)
 						// append to that
-						content.append(line);
+						((Text) content).append(line);
 					else {
 						// put content in paragraph and prepare new content
 						paragraph.append(content);
@@ -83,7 +97,7 @@ public final class Section extends Group {
 
 		// if paragraph is null, no line after subtitle
 		if (paragraph != null) {
-			if (content != null && !content.getLines().isEmpty())
+			if (content != null && !content.isEmpty())
 				paragraph.append(content);
 			if (!paragraph.isEmpty())
 				section.append(paragraph);

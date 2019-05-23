@@ -10,10 +10,10 @@ import java.util.Properties;
 import java.util.stream.Stream;
 
 /**
- * @version 3.0
+ * @version 3.1
  */
 public class HWtoHTML {
-	private static final String VERSION = "3.0";
+	private static final String VERSION = "3.1";
 
 
 	private static class PropertiesUtils {

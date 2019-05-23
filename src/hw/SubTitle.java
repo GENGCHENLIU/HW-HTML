@@ -1,6 +1,5 @@
 package hw;
 
-import html.Content;
 import html.Element;
 
 public final class SubTitle extends TextContent {
@@ -9,7 +8,7 @@ public final class SubTitle extends TextContent {
 	}
 
 	@Override
-	public Content toHtmlContent() {
+	public html.Content toHtmlContent() {
 		final Element element = new Element("h4");
 		element.appendContent(toString());
 		return element;

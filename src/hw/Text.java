@@ -1,7 +1,6 @@
 package hw;
 
 import html.BR;
-import html.Content;
 import html.Element;
 
 import java.util.Iterator;
@@ -15,7 +14,7 @@ public class Text extends TextContent {
 	}
 
 	@Override
-	public Content toHtmlContent() {
+	public html.Content toHtmlContent() {
 		final Element p = new Element("p");
 
 		final Iterator<String> linesIt = getLines().iterator();
